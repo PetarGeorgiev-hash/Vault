@@ -1,0 +1,19 @@
+cat > .gitignore <<'EOF'
+# Go
+bin/
+*.test
+*.exe
+
+# Node/Electron
+node_modules/
+dist/
+out/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+EOF
