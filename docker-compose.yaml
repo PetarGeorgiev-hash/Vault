@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: vault
+      POSTGRES_PASSWORD: vaultpass
+      POSTGRES_DB: vaultdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./server
+    environment:
+      DB_HOST: db
+      DB_USER: vault
+      DB_PASSWORD: vaultpass
+      DB_NAME: vaultdb
+      DB_PORT: 5432
+    depends_on:
+      - db
+    ports:
+      - "8787:8787"
+
+volumes:
+  pgdata:
