@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Vault Client</title>
+    <style>
+      :root {
+        --bg: #f5f7fa;
+        --card: #ffffff;
+        --muted: #777;
+        --text: #222;
+        --border: #e9ecf2;
+        --primary: #6a5acd;
+        --primary-2: #4a3cb0;
+        --danger: #f44336;
+        --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Topbar */
+      .topbar {
+        height: 56px;
+        background: var(--card);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        position: sticky;
+        top: 0;
+        z-index: 3;
+      }
+      .topbar .email {
+        font-weight: 600;
+        color: #444;
+      }
+      .btn {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: var(--primary-2);
+      }
+      .btn-danger {
+        background: var(--danger);
+        color: #fff;
+      }
+
+      /* Layout */
+      .layout {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+      }
+      .sidebar {
+        width: 260px;
+        min-width: 260px;
+        max-width: 260px;
+        background: #fafbff;
+        border-right: 1px solid var(--border);
+        padding: 16px;
+        overflow: auto;
+      }
+      .sidebar h3 {
+        margin: 8px 0 12px;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        text-transform: uppercase;
+      }
+      .org {
+        padding: 10px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: background 0.15s;
+      }
+      .org:hover {
+        background: #f0edff;
+      }
+      .org.active {
+        background: #eae7ff;
+      }
+      .org .ico {
+        font-size: 18px;
+      }
+      .org .txt {
+        display: flex;
+        flex-direction: column;
+      }
+      .org .txt b {
+        font-size: 14px;
+      }
+      .org .txt small {
+        font-size: 12px;
+        color: #666;
+      }
+
+      /* Main */
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px;
+        overflow: auto;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        background: var(--bg);
+        padding-bottom: 8px;
+        z-index: 2;
+      }
+      .search-box {
+        flex: 1;
+        display: flex;
+        align-items: center;
+      }
+      .search-box input,
+      .controls select {
+        height: 40px;
+        padding: 0 12px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-size: 14px;
+        background: #fff;
+        width: 100%;
+      }
+      .controls select {
+        width: 220px;
+      }
+
+      .vaults {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+      }
+      .vault-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+        transition: transform 0.1s, box-shadow 0.1s;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .vault-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+      }
+      .vault-card h4 {
+        margin: 0;
+        font-size: 16px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .vault-card small {
+        color: #666;
+      }
+
+      .section-title {
+        margin: 8px 0 0 2px;
+        font-size: 14px;
+        color: #555;
+      }
+
+      /* Items */
+      .items {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .item-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px 14px;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+      .item-info {
+        display: flex;
+        flex-direction: column;
+      }
+      .item-info b {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .muted {
+        color: #666;
+        font-size: 12px;
+      }
+      .pwd-line {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+      }
+      .pwd-dot {
+        letter-spacing: 3px;
+      }
+      .icon-btn {
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 10px;
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+      .icon-btn:hover {
+        background: #f6f6ff;
+      }
+
+      /* Cards (auth / unlock / modals) */
+      .auth-card {
+        margin: auto;
+        background: var(--card);
+        padding: 34px 28px;
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        width: 420px;
+        max-width: 92%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+      h2 {
+        margin: 0 0 6px 0;
+      }
+      .sub {
+        color: #666;
+        font-size: 13px;
+        margin-bottom: 10px;
+      }
+
+      .input-group {
+        position: relative;
+        margin: 8px 0;
+      }
+      .input-group input {
+        width: 100%;
+        height: 44px;
+        padding: 0 42px 0 12px;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        font-size: 14px;
+        background: #fff;
+      }
+      .toggle-visibility {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        background: #fff;
+      }
+      .toggle-visibility:active {
+        transform: translateY(-50%) scale(0.98);
+      }
+      .auth-btn {
+        width: 100%;
+        height: 44px;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        background: linear-gradient(135deg, var(--primary), var(--primary-2));
+        color: #fff;
+        margin-top: 6px;
+      }
+      .switch-link {
+        margin-top: 6px;
+        font-size: 13px;
+        color: #555;
+      }
+      .switch-link a {
+        color: var(--primary);
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      /* Password strength (Register only) */
+      .meter-wrap {
+        margin-top: 6px;
+      }
+      .strength {
+        width: 100%;
+        height: 8px;
+        border-radius: 999px;
+        background: #eee;
+        position: relative;
+        overflow: hidden;
+      }
+      .strength > span {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 0%;
+        background: #e57373;
+        transition: width 0.25s ease, background 0.25s ease;
+      }
+      .strength-text {
+        margin-top: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #e57373;
+        text-align: left;
+      }
+
+      /* Modal */
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+      }
+      .modal.open {
+        display: flex;
+      }
+      .modal-content {
+        background: #fff;
+        border-radius: 14px;
+        width: 420px;
+        max-width: 92%;
+        box-shadow: var(--shadow);
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .modal h3 {
+        margin: 0 0 6px 0;
+      }
+      .modal .input-group input,
+      .modal select {
+        height: 42px;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        padding: 0 12px;
+      }
+
+      /* Helpers */
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .badge {
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #eef0ff;
+        color: #334;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ===== AUTH (Register / Login) ===== -->
+    <section id="auth" class="auth-card hidden">
+      <h2 id="authTitle">Create your account</h2>
+      <div class="sub" id="authSub">
+        Use a strong master password — only you know it.
+      </div>
+
+      <div class="input-group">
+        <input
+          id="email"
+          type="email"
+          placeholder="Email"
+          autocomplete="username"
+        />
+      </div>
+
+      <div class="input-group" id="registerPasswordGroup">
+        <input
+          id="password"
+          type="password"
+          placeholder="Password"
+          autocomplete="new-password"
+        />
+        <button
+          type="button"
+          class="toggle-visibility"
+          id="togglePassword"
+          aria-label="Toggle password"
+        >
+          👁️
+        </button>
+
+        <!-- Strength meter (Register only) -->
+        <div class="meter-wrap" id="meterWrap">
+          <div class="strength"><span id="meterBar"></span></div>
+          <div class="strength-text" id="meterText">Weak</div>
+        </div>
+      </div>
+
+      <div class="input-group hidden" id="loginPasswordGroup">
+        <input
+          id="loginPassword"
+          type="password"
+          placeholder="Password"
+          autocomplete="current-password"
+        />
+        <button
+          type="button"
+          class="toggle-visibility"
+          id="toggleLoginPassword"
+          aria-label="Toggle password"
+        >
+          👁️
+        </button>
+      </div>
+
+      <button id="btnAction" class="auth-btn">Register</button>
+      <div class="switch-link" id="switchLine">
+        Already have an account? <a id="switchAuth">Login</a>
+      </div>
+    </section>
+
+    <!-- ===== UNLOCK ===== -->
+    <section id="unlock" class="auth-card hidden">
+      <h2>Unlock</h2>
+      <div class="sub">Enter your master password to unlock your vaults.</div>
+
+      <div class="input-group">
+        <input id="unlockEmail" type="text" disabled />
+      </div>
+      <div class="input-group">
+        <input
+          id="unlockPassword"
+          type="password"
+          placeholder="Master Password"
+        />
+        <button
+          type="button"
+          class="toggle-visibility"
+          id="toggleUnlockPassword"
+          aria-label="Toggle password"
+        >
+          👁️
+        </button>
+      </div>
+
+      <button id="unlockBtn" class="auth-btn">Unlock</button>
+      <div class="switch-link">
+        Not you? <a id="switchUser">Use a different account</a>
+      </div>
+    </section>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section
+      id="dashboard"
+      class="hidden"
+      style="flex: 1; display: flex; flex-direction: column"
+    >
+      <div class="topbar">
+        <div class="email" id="userEmail"></div>
+        <div class="row">
+          <button id="newVaultBtn" class="btn btn-primary">+ New Vault</button>
+          <button id="newItemBtn" class="btn icon-btn">+ New Item</button>
+          <button id="logout" class="btn btn-danger">Logout</button>
+        </div>
+      </div>
+
+      <div class="layout">
+        <aside class="sidebar">
+          <h3>Organizations</h3>
+          <div id="orgs"></div>
+        </aside>
+
+        <main class="main">
+          <div class="controls">
+            <div class="search-box">
+              <input
+                id="searchInput"
+                type="text"
+                placeholder="Search vaults..."
+              />
+            </div>
+            <select id="filterKind">
+              <option value="all">All Orgs</option>
+              <option value="personal">Personal</option>
+              <option value="business">Business</option>
+            </select>
+          </div>
+
+          <div id="vaults" class="vaults"></div>
+
+          <div class="section-title">Items</div>
+          <div id="items" class="items"></div>
+        </main>
+      </div>
+    </section>
+
+    <!-- ===== MODALS ===== -->
+    <!-- New Vault -->
+    <div id="vaultModal" class="modal">
+      <div class="modal-content">
+        <h3>Create New Vault</h3>
+        <div class="input-group">
+          <input id="vaultName" type="text" placeholder="Vault name" />
+        </div>
+        <select id="orgSelect"></select>
+        <div class="modal-actions">
+          <button id="cancelVaultModal" class="icon-btn">Cancel</button>
+          <button id="createVault" class="btn btn-primary">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Item create/edit -->
+    <div id="itemModal" class="modal">
+      <div class="modal-content">
+        <h3 id="itemModalTitle">Add Item</h3>
+        <div class="input-group">
+          <input
+            id="itemTitle"
+            type="text"
+            placeholder="Title (e.g., GitHub)"
+          />
+        </div>
+        <div class="input-group">
+          <input
+            id="itemUsername"
+            type="text"
+            placeholder="Username or email"
+          />
+        </div>
+        <div class="input-group">
+          <input id="itemPassword" type="password" placeholder="Password" />
+          <button
+            type="button"
+            class="toggle-visibility"
+            id="toggleItemPassword"
+          >
+            👁️
+          </button>
+        </div>
+        <div class="modal-actions">
+          <button id="cancelItemModal" class="icon-btn">Cancel</button>
+          <button id="saveItem" class="btn btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      // ====== Utilities ======
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+      async function toAesKey(raw) {
+        const buf = raw instanceof ArrayBuffer ? raw : raw.buffer;
+        return crypto.subtle.importKey("raw", buf, { name: "AES-GCM" }, false, [
+          "encrypt",
+          "decrypt",
+        ]);
+      }
+
+      // Persist last email locally (since session.json from preload doesn't store email)
+      const rememberEmail = (email) => {
+        try {
+          localStorage.setItem("lastEmail", email);
+        } catch {}
+      };
+      const getRememberedEmail = () => {
+        try {
+          return localStorage.getItem("lastEmail");
+        } catch {
+          return null;
+        }
+      };
+
+      // Password visibility toggle helper
+      function bindToggleVisibility(inputId, buttonId) {
+        const input = document.getElementById(inputId);
+        const btn = document.getElementById(buttonId);
+        if (!input || !btn) return;
+        btn.addEventListener("click", () => {
+          const show = input.type === "password";
+          input.type = show ? "text" : "password";
+          btn.textContent = show ? "🙈" : "👁️";
+        });
+      }
+
+      // Strength meter (register only)
+      function scorePassword(pw) {
+        let s = 0;
+        if (pw.length >= 8) s++;
+        if (/[A-Z]/.test(pw)) s++;
+        if (/[0-9]/.test(pw)) s++;
+        if (/[^A-Za-z0-9]/.test(pw)) s++;
+        return s; // 0..4
+      }
+      function updateMeter(pw) {
+        const bar = $("#meterBar");
+        const txt = $("#meterText");
+        const s = scorePassword(pw);
+        let width = "0%",
+          color = "#e57373",
+          label = "Weak";
+        if (s <= 1) {
+          width = "25%";
+          color = "#e57373";
+          label = "Weak";
+        } else if (s === 2) {
+          width = "50%";
+          color = "#ffb74d";
+          label = "Medium";
+        } else if (s === 3) {
+          width = "75%";
+          color = "#81c784";
+          label = "Strong";
+        } else {
+          width = "100%";
+          color = "#2e7d32";
+          label = "Strong";
+        }
+        bar.style.width = width;
+        bar.style.background = color;
+        txt.textContent = label;
+        txt.style.color = color;
+      }
+
+      // Data/state
+      let MODE = "register"; // "register" | "login"
+      let rootKey = null;
+      let sessionCache = null; // window.api.session()
+      let activeVaults = []; // list for selected org
+      let groups = {}; // org_id -> {org_name, org_kind, vaults}
+      let activeVaultId = null; // currently-selected vault
+      let editingItemId = null; // item being edited
+
+      // ====== AUTH UI MODE TOGGLE ======
+      function setAuthMode(mode) {
+        MODE = mode;
+        const title = $("#authTitle");
+        const sub = $("#authSub");
+        const action = $("#btnAction");
+        const switchLine = $("#switchLine");
+        const regGrp = $("#registerPasswordGroup");
+        const loginGrp = $("#loginPasswordGroup");
+
+        if (mode === "register") {
+          title.textContent = "Create your account";
+          sub.textContent = "Use a strong master password — only you know it.";
+          action.textContent = "Register";
+          switchLine.innerHTML =
+            'Already have an account? <a id="switchAuth">Login</a>';
+          regGrp.classList.remove("hidden");
+          loginGrp.classList.add("hidden");
+          // rebind switch
+          $("#switchAuth").onclick = () => setAuthMode("login");
+        } else {
+          title.textContent = "Welcome back";
+          sub.textContent = "";
+          action.textContent = "Login";
+          switchLine.innerHTML = 'New here? <a id="switchAuth">Register</a>';
+          regGrp.classList.add("hidden");
+          loginGrp.classList.remove("hidden");
+          $("#switchAuth").onclick = () => setAuthMode("register");
+        }
+      }
+
+      // ====== DASHBOARD RENDERING ======
+      function groupVaultsByOrg(vaults) {
+        const map = {};
+        for (const v of vaults) {
+          if (!map[v.org_id]) {
+            map[v.org_id] = {
+              org_name: v.org_name,
+              org_kind: v.org_kind,
+              vaults: [],
+            };
+          }
+          map[v.org_id].vaults.push(v);
+        }
+        return map;
+      }
+
+      function renderSidebarOrgs() {
+        const container = $("#orgs");
+        container.innerHTML = "";
+        const entries = Object.entries(groups);
+        if (entries.length === 0) {
+          container.innerHTML = '<div class="muted">No organizations</div>';
+          return;
+        }
+        entries.forEach(([orgId, org], idx) => {
+          const div = document.createElement("div");
+          div.className = "org" + (idx === 0 ? " active" : "");
+          div.innerHTML = `<span class="ico">🏢</span>
+            <div class="txt"><b>${org.org_name}</b><small>${org.org_kind}</small></div>`;
+          div.onclick = () => {
+            $$(".org").forEach((n) => n.classList.remove("active"));
+            div.classList.add("active");
+            activeVaults = org.vaults;
+            renderVaults(activeVaults);
+          };
+          container.appendChild(div);
+          if (idx === 0) {
+            activeVaults = org.vaults;
+          }
+        });
+      }
+
+      function renderVaults(list) {
+        const q = $("#searchInput").value.trim().toLowerCase();
+        const kind = $("#filterKind").value;
+
+        const wrap = $("#vaults");
+        wrap.innerHTML = "";
+
+        list
+          .filter((v) => v.name.toLowerCase().includes(q))
+          .filter((v) => (kind === "all" ? true : v.org_kind === kind))
+          .forEach((v) => {
+            const card = document.createElement("div");
+            card.className = "vault-card";
+            card.innerHTML = `
+              <h4>🔑 ${v.name}</h4>
+              <small>${v.org_name} • <span class="badge">${v.org_kind}</span></small>
+            `;
+            card.onclick = async () => {
+              activeVaultId = v.id;
+              await loadItems(v.id);
+            };
+            wrap.appendChild(card);
+          });
+
+        if (wrap.children.length === 0) {
+          wrap.innerHTML =
+            '<div class="muted">No vaults match your search.</div>';
+        }
+      }
+
+      async function loadItems(vaultId) {
+        try {
+          const items = await window.api.listItems(vaultId);
+          await renderItems(items);
+        } catch (err) {
+          console.error(err);
+          $("#items").innerHTML =
+            '<div class="muted">Failed to load items.</div>';
+        }
+      }
+
+      async function renderItems(items) {
+        const container = $("#items");
+        container.innerHTML = "";
+        if (!items || items.length === 0) {
+          container.innerHTML = '<div class="muted">No items yet.</div>';
+          return;
+        }
+
+        for (const item of items) {
+          let data = null;
+          try {
+            // item: { id, nonce, aad, ciphertext, ... } (all base64 strings)
+            data = await decryptItem(item, rootKey);
+          } catch (e) {
+            console.warn("Decrypt failed", e);
+          }
+
+          const card = document.createElement("div");
+          card.className = "item-card";
+
+          // left info
+          const info = document.createElement("div");
+          info.className = "item-info";
+          if (data) {
+            info.innerHTML = `
+              <b>🔖 ${escapeHTML(data.title || "(no title)")}</b>
+              <span class="muted">👤 ${escapeHTML(data.username || "")}</span>
+              <div class="pwd-line">
+                <span class="pwd-dot" data-pwd="${escapeHTML(
+                  data.password || ""
+                )}">••••••••</span>
+                <button class="icon-btn tiny" data-role="reveal">👁️</button>
+                <button class="icon-btn tiny" data-role="copy">Copy</button>
+              </div>
+            `;
+          } else {
+            info.innerHTML = `
+              <b>🔖 Encrypted item</b>
+              <span class="muted">Unable to decrypt with current key</span>
+            `;
+          }
+
+          // right actions
+          const actions = document.createElement("div");
+          actions.className = "row";
+          const editBtn = document.createElement("button");
+          editBtn.className = "icon-btn";
+          editBtn.textContent = "Edit";
+          editBtn.onclick = () => {
+            if (!data) return alert("Cannot edit: failed to decrypt.");
+            editingItemId = item.id;
+            $("#itemModalTitle").textContent = "Edit Item";
+            $("#itemTitle").value = data.title || "";
+            $("#itemUsername").value = data.username || "";
+            $("#itemPassword").value = data.password || "";
+            openModal("itemModal");
+          };
+          const delBtn = document.createElement("button");
+          delBtn.className = "icon-btn";
+          delBtn.textContent = "Delete";
+          delBtn.onclick = async () => {
+            if (!confirm("Delete this item?")) return;
+            try {
+              await window.api.deleteItem(activeVaultId, item.id);
+              await loadItems(activeVaultId);
+            } catch (err) {
+              alert("Delete failed: " + err.message);
+            }
+          };
+          actions.append(editBtn, delBtn);
+
+          card.append(info, actions);
+          container.appendChild(card);
+
+          // bind reveal/copy
+          if (data) {
+            const reveal = card.querySelector('[data-role="reveal"]');
+            const txt = card.querySelector(".pwd-dot");
+            let shown = false;
+            reveal.onclick = () => {
+              shown = !shown;
+              txt.textContent = shown ? txt.dataset.pwd : "••••••••";
+              reveal.textContent = shown ? "🙈" : "👁️";
+            };
+            const copy = card.querySelector('[data-role="copy"]');
+            copy.onclick = async () => {
+              try {
+                await navigator.clipboard.writeText(txt.dataset.pwd || "");
+                copy.textContent = "Copied!";
+                setTimeout(() => (copy.textContent = "Copy"), 900);
+              } catch {}
+            };
+          }
+        }
+      }
+
+      function escapeHTML(s) {
+        return (s || "").replace(
+          /[&<>"']/g,
+          (m) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            }[m])
+        );
+      }
+
+      // ====== AUTH / UNLOCK FLOW ======
+      async function doAuthAction() {
+        const email = $("#email").value.trim();
+        rememberEmail(email);
+
+        try {
+          if (MODE === "register") {
+            const pw = $("#password").value;
+            const data = await window.api.register(email, pw);
+            sessionCache = data;
+            // derive root key 1Password-style (client-side)
+            rootKey = await deriveMUK(pw, sessionCache.secret_key, "salt123");
+            showDashboard(data, email);
+          } else {
+            const pw = $("#loginPassword").value;
+            const data = await window.api.login(email, pw);
+            sessionCache = data;
+            rootKey = await deriveMUK(pw, data.secret_key, "salt123");
+            showDashboard(data, email);
+          }
+        } catch (err) {
+          alert("Error: " + err.message);
+        }
+      }
+
+      async function doUnlock() {
+        const pw = $("#unlockPassword").value;
+        if (!sessionCache?.secret_key) {
+          alert("No session found.");
+          return;
+        }
+        try {
+          rootKey = await deriveMUK(pw, sessionCache.secret_key, "salt123");
+          const email = getRememberedEmail() || "(unknown)";
+          showDashboard(sessionCache, email);
+        } catch (err) {
+          alert("Unlock failed: " + err.message);
+        }
+      }
+
+      function showAuth() {
+        $("#dashboard").classList.add("hidden");
+        $("#unlock").classList.add("hidden");
+        $("#auth").classList.remove("hidden");
+      }
+      function showUnlock(emailLabel) {
+        $("#dashboard").classList.add("hidden");
+        $("#auth").classList.add("hidden");
+        $("#unlock").classList.remove("hidden");
+        $("#unlockEmail").value = emailLabel || "(unknown)";
+      }
+      function showDashboard(data, email) {
+        $("#auth").classList.add("hidden");
+        $("#unlock").classList.add("hidden");
+        $("#dashboard").classList.remove("hidden");
+
+        // Sidebar + vaults
+        groups = groupVaultsByOrg(data.vaults || []);
+        renderSidebarOrgs();
+        renderVaults(activeVaults || []);
+        $("#userEmail").textContent = email || getRememberedEmail() || "User";
+
+        // Populate orgSelect for create vault modal
+        const sel = $("#orgSelect");
+        sel.innerHTML = "";
+        Object.entries(groups).forEach(([orgId, org]) => {
+          const o = document.createElement("option");
+          o.value = orgId;
+          o.textContent = `${org.org_name} (${org.org_kind})`;
+          sel.appendChild(o);
+        });
+      }
+
+      // ====== ITEMS: CREATE / UPDATE ======
+      async function saveItem() {
+        if (!activeVaultId) return alert("Select a vault first.");
+        const title = $("#itemTitle").value.trim();
+        const username = $("#itemUsername").value.trim();
+        const password = $("#itemPassword").value;
+        try {
+          const encrypted = await encryptItem(rootKey, {
+            title,
+            username,
+            password,
+          });
+          if (editingItemId) {
+            await window.api.updateItem(
+              activeVaultId,
+              editingItemId,
+              encrypted
+            );
+          } else {
+            await window.api.createItem(activeVaultId, encrypted);
+          }
+          closeModal("itemModal");
+          await loadItems(activeVaultId);
+        } catch (err) {
+          alert("Error saving item: " + err.message);
+        }
+      }
+
+      // ====== VAULT: CREATE ======
+      async function createVault() {
+        const name = $("#vaultName").value.trim();
+        if (!name) return alert("Vault name required");
+        const orgId = $("#orgSelect").value;
+        console.log(orgId);
+        try {
+          const newV = await window.api.createVault(orgId, name);
+          // update local view
+          sessionCache.vaults.push(newV);
+          groups = groupVaultsByOrg(sessionCache.vaults);
+          renderSidebarOrgs();
+          renderVaults(groups[orgId].vaults);
+          closeModal("vaultModal");
+          $("#vaultName").value = "";
+        } catch (err) {
+          alert("Error creating vault: " + err.message);
+        }
+      }
+
+      // ====== MODAL HELPERS ======
+      function openModal(id) {
+        document.getElementById(id).classList.add("open");
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("open");
+      }
+
+      // ====== EVENT BINDINGS ======
+      // Toggles
+      bindToggleVisibility("password", "togglePassword");
+      bindToggleVisibility("loginPassword", "toggleLoginPassword");
+      bindToggleVisibility("unlockPassword", "toggleUnlockPassword");
+      bindToggleVisibility("itemPassword", "toggleItemPassword");
+
+      // Meter
+      $("#password")?.addEventListener("input", (e) =>
+        updateMeter(e.target.value)
+      );
+
+      // Auth buttons
+      $("#btnAction").onclick = () => doAuthAction();
+      $("#unlockBtn").onclick = () => doUnlock();
+      $("#switchUser").onclick = () => {
+        // clear session from disk and go to auth
+        try {
+          window.api.logout();
+        } catch {}
+        sessionCache = null;
+        showAuth();
+        setAuthMode("login");
+      };
+
+      // Dashboard interactions
+      $("#logout").onclick = () => {
+        try {
+          window.api.logout();
+        } catch {}
+        sessionCache = null;
+        rootKey = null;
+        activeVaultId = null;
+        editingItemId = null;
+        showAuth();
+        setAuthMode("login");
+      };
+      $("#newItemBtn").onclick = () => {
+        if (!activeVaultId) return alert("Select a vault first.");
+        editingItemId = null;
+        $("#itemModalTitle").textContent = "Add Item";
+        $("#itemTitle").value = "";
+        $("#itemUsername").value = "";
+        $("#itemPassword").value = "";
+        openModal("itemModal");
+      };
+      $("#saveItem").onclick = () => saveItem();
+      $("#cancelItemModal").onclick = () => closeModal("itemModal");
+
+      $("#newVaultBtn").onclick = () => {
+        if (!Object.keys(groups).length) {
+          return alert("No organizations available.");
+        }
+        openModal("vaultModal");
+      };
+      $("#createVault").onclick = () => createVault();
+      $("#cancelVaultModal").onclick = () => closeModal("vaultModal");
+
+      // Search/filter
+      $("#searchInput").addEventListener("input", () =>
+        renderVaults(activeVaults || [])
+      );
+      $("#filterKind").addEventListener("change", () =>
+        renderVaults(activeVaults || [])
+      );
+
+      // ====== BOOT ======
+      (async function boot() {
+        // Default to auth view
+        $("#auth").classList.remove("hidden");
+        setAuthMode("register"); // initial screen
+
+        try {
+          const saved = await window.api.session();
+          if (saved && saved.access_token) {
+            sessionCache = saved;
+            const emailLabel = getRememberedEmail() || "(unknown)";
+            $("#auth").classList.add("hidden");
+            showUnlock(emailLabel);
+          } else {
+            showAuth();
+            setAuthMode("register");
+          }
+        } catch {
+          showAuth();
+          setAuthMode("register");
+        }
+      })();
+    </script>
+
+    <!-- crypto.js must export deriveMUK, encryptItem, decryptItem -->
+    <script type="module">
+      // These imports assume crypto.js sits alongside index.html
+      // If your path differs, adjust below.
+      import { deriveMUK, encryptItem, decryptItem } from "./crypto.js";
+      // Expose to this module scope
+      window.deriveMUK = deriveMUK;
+      window.encryptItem = encryptItem;
+      window.decryptItem = decryptItem;
+    </script>
+  </body>
+</html>

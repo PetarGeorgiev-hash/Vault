@@ -1,0 +1,14 @@
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTg5NjQxMTgsImlhdCI6MTc1ODk2MzIxOCwic3ViIjoiYjQyNmQ2OTAtZTRiMy00ZTYxLTg1ZDMtM2ZhZjM1YTY0MjI0In0.yxozEgD33qu_tCOQsk8OUj6S9KHMc24mp0BmYwWMGgg",
+  "refresh_token": "iZN1akNFcAZd_jJu5-_EYKYy0Bc_U_2z_HOSAJX0SVg",
+  "secret_key": "QAM6RFSHAM4MPTYDFSWK2B5GFLJYM33Q",
+  "vaults": [
+    {
+      "id": "80c2327a-2cf8-4d22-93ce-60798ab90a0d",
+      "name": "Personal Vault",
+      "org_id": "2091003f-821e-491a-be64-d09abe2b876c",
+      "org_name": "test@gmail.com's personal org",
+      "org_kind": "personal"
+    }
+  ]
+}

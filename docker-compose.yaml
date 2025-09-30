@@ -1,8 +1,9 @@
-version: "3.9"
 services:
   db:
     image: postgres:16
     restart: always
+    ports:
+      - "55432:5432"  
     environment:
       POSTGRES_USER: vault
       POSTGRES_PASSWORD: vaultpass
@@ -18,6 +19,7 @@ services:
       DB_PASSWORD: vaultpass
       DB_NAME: vaultdb
       DB_PORT: 5432
+      JWT_SECRET: 'vault-super-secret-key-dste-321'
     depends_on:
       - db
     ports:

@@ -1,45 +1,24 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
-
-	_ "github.com/jackc/pgx/v5/stdlib"
+	_ "net/http/pprof"
 )
 
 func main() {
-	mux := http.NewServeMux()
-
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbUser := os.Getenv("DB_USER")
-	dbPass := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-		dbUser, dbPass, dbHost, dbPort, dbName,
-	)
-
-	db, err := sql.Open("pgx", dsn)
-	if err != nil {
-		log.Fatalf("cannot open db: %v", err)
-	}
+	// connect DB
+	db := connectDB()
 	defer db.Close()
 
-	if err := db.Ping(); err != nil {
-		log.Fatalf("cannot connect db: %v", err)
-	}
-	log.Println("✅ connected to Postgres")
+	// wrap DB in a store (handy later)
+	store := &Store{DB: db}
 
-	// health check
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "ok")
-	})
+	// routes
+	mux := http.NewServeMux()
+	registerRoutes(mux, store)
 
-	addr := "127.0.0.1:8787"
+	addr := "0.0.0.0:8787"
 	log.Println("server listening on", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatal(err)

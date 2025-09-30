@@ -8,10 +8,12 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+COPY migrations ./migrations
 RUN go build -o backend .
 
 FROM debian:bookworm-slim
 WORKDIR /app
 COPY --from=build /app/backend .
+COPY --from=build /app/migrations ./migrations
 EXPOSE 8787
 CMD ["./backend"]

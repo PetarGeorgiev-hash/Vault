@@ -1,6 +1,5 @@
--- +goose Up
--- +goose StatementBegin
-CREATE TABLE users (
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email TEXT NOT NULL UNIQUE,
     pw_salt BYTEA NOT NULL,
@@ -13,8 +12,3 @@ CREATE TABLE users (
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now()
 );
--- +goose StatementEnd
--- +goose Down
--- +goose StatementBegin
-DROP TABLE users;
--- +goose StatementEnd
